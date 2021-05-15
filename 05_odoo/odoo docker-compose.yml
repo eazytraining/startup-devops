@@ -1,0 +1,74 @@
+version: '3.7'
+
+services:
+  db:
+    image: postgres:9.4
+    environment:
+      - POSTGRES_PASSWORD=odoo
+      - POSTGRES_USER=odoo
+      - TZ=Europe/Paris
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - eazytraining-network
+
+  odoo:
+    image: odoo:10.0
+    depends_on:
+      - db
+    links:
+      - db:db
+    tty: true
+    command: -- --dev=reload
+    volumes:
+      - ./o_addons:/mnt/extra-addons
+      - ./o_etc:/etc/odoo
+      - /etc/localtime:/etc/localtime:ro
+      - ./backup:/backup
+      - odoo_data:/var/lib/odoo/
+    environment:
+      - TZ=Europe/Paris
+      - VIRTUAL_HOST=odoo.eazytraining.fr
+      - LETSENCRYPT_HOST=odoo.eazytraining.fr
+      - VIRTUAL_PORT=8069
+    networks:
+      - eazytraining-network
+
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - eazytraining-network
+    environment:
+      DHPARAM_GENERATION: "false"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./etc/nginx/certs:/etc/nginx/certs
+      - ./etc/nginx/vhost.d:/etc/nginx/vhost.d
+      - nginx_proxy_html:/usr/share/nginx/html
+
+  nginx-proxy-letsencrypt:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    container_name: nginx-proxy-letsencrypt
+    networks:
+      - eazytraining-network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./etc/nginx/certs:/etc/nginx/certs
+      - ./etc/nginx/vhost.d:/etc/nginx/vhost.d
+      - nginx_proxy_html:/usr/share/nginx/html
+    environment:
+      DEFAULT_EMAIL: diranetafen@yahoo.com
+      NGINX_PROXY_CONTAINER: nginx-proxy
+
+volumes:
+  pg_data:
+  odoo_data:
+  nginx_proxy_html:
+networks:
+  eazytraining-network:
+    name: "eazytraining-network"

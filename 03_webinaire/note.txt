@@ -1,0 +1,48 @@
+wget -qO- https://ubuntu.bigbluebutton.org/bbb-install.sh | bash -s -- -v xenial-220 -a -s bbb.eazytraining.fr -e diranetafen@yahoo.com -g -a -c bbb.eazytraining.fr:ca68121c05273da2d843b4c3babdd662
+
+mp4 converter
+-------------
+https://github.com/createwebinar/bbb-download
+https://docs.bigbluebutton.org/dev/recording.html
+
+URL: /var/www/bigbluebutton-default/download/presentation/
+modèle:  https://webinar.eazytraining.fr/download/presentation/{meetingID}/{meetingID}.mp4
+exemple:
+https://webinar.eazytraining.fr/download/presentation/46ff0d6dafbcd58454493d7dd341aa61920d012e-1586197503821/46ff0d6dafbcd58454493d7dd341aa61920d012e-1586197503821.mp4
+
+root partition too small: http://docs.bigbluebutton.org/11install.html
+------------------------
+sudo bbb-conf --stop
+
+sudo mv /opt/freeswitch/recordings /mnt/bbb-data/
+sudo ln -s /mnt/bbb-data/recordings /opt/freeswitch/recordings
+
+sudo mv /usr/share/red5/webapps/video/streams /mnt/bbb-data/
+sudo ln -s /mnt/bbb-data/streams /usr/share/red5/webapps/video/streams
+
+sudo mv /var/bigbluebutton /mnt/bbb-data/
+sudo ln -s /mnt/bbb-data/bigbluebutton /var/bigbluebutton
+
+sudo bbb-conf --start
+
+resiez root partition: https://aws.amazon.com/premiumsupport/knowledge-center/expand-root-ebs-linux/
+---------------------
+-> take a snapshoot of the disk
+-> resize ebs throught the aws console
+-> wait until "performance optimization" status desappear
+-> grow disk
+lsblk
+growpart /dev/xvda 1
+lsblk
+-> increase disk size
+sudo resize2fs /dev/xvda1
+
+# issue sharing screen and webcam
+/etc/kurento/modules/kurento/WebRtcEndpoint.conf.ini
+update external ip with public ip
+https://github.com/bigbluebutton/bigbluebutton/issues/6797#issuecomment-612005492
+
+Ip change :
+-----------
+
+https://github.com/bigbluebutton/bigbluebutton/issues/8151#issuecomment-621559220

@@ -1,0 +1,87 @@
+
+version: '3.7'
+
+services:
+  site-vitrine-db:
+    container_name: site-vitrine-db
+    image: mysql:5.7
+    volumes:
+     - site-vitrine-db-data:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: eazytraining
+      MYSQL_USER: eazytraining
+      MYSQL_PASSWORD: password
+    networks:
+      - eazytraining-network
+
+  site-vitrine-web:
+    container_name: site-vitrine-web
+    depends_on:
+     - site-vitrine-db
+    image: wordpress:5.3.2
+    restart: always
+    environment:
+      VIRTUAL_HOST: "wordpress.eazytraining.fr"
+      LETSENCRYPT_HOST: "wordpress.eazytraining.fr"
+      WORDPRESS_DB_HOST: site-vitrine-db:3306
+      WORDPRESS_DB_USER: eazytraining
+      WORDPRESS_DB_PASSWORD: password
+      WORDPRESS_DB_NAME: eazytraining
+    volumes:
+      - ./eazytraining:/var/www/html
+    networks:
+      - eazytraining-network
+
+  site-vitrine-phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: site-vitrine-phpmyadmin
+    restart: always
+    environment:
+      UPLOAD_LIMIT: 3000000000
+    links:
+      - "site-vitrine-db:db"
+    ports:
+     - 8080:80
+    volumes:
+     - /sessions
+    networks:
+      - eazytraining-network
+
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - eazytraining-network
+    environment:
+      DHPARAM_GENERATION: "false"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./etc/nginx/certs:/etc/nginx/certs
+      - ./etc/nginx/vhost.d:/etc/nginx/vhost.d
+      - nginx_proxy_html:/usr/share/nginx/html
+
+  nginx-proxy-letsencrypt:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    container_name: nginx-proxy-letsencrypt
+    networks:
+      - eazytraining-network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./etc/nginx/certs:/etc/nginx/certs
+      - ./etc/nginx/vhost.d:/etc/nginx/vhost.d
+      - nginx_proxy_html:/usr/share/nginx/html
+    environment:
+      DEFAULT_EMAIL: diranetafen@yahoo.com
+      NGINX_PROXY_CONTAINER: nginx-proxy
+
+volumes:
+    site-vitrine-db-data:
+    nginx_proxy_html:
+networks:
+  eazytraining-network:
+    name: "eazytraining-network"
